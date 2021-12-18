@@ -47,12 +47,12 @@ var (
 		},
 	}
 
-	startLightsCmd = &cobra.Command{
-		Use:   "start",
+	setCmd = &cobra.Command{
+		Use:   "set",
 		Short: "Start the lights.",
 		Long:  `Turn the lights on.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("starting barlight server on port %v\n", port)
+			fmt.Printf("setting barlights\n")
 			// TODO: start server
 			return nil
 		},
@@ -73,6 +73,8 @@ func init() {
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(serverCmd)
+	rootCmd.AddCommand(setCmd)
+	rootCmd.AddCommand(offCmd)
 
 	serverCmd.Flags().IntVarP(&port, "port", "p", 8080, "desired port number")
 
