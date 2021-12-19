@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"barlights/pkg"
-	"barlights/types"
 	"fmt"
 	"os"
 
 	ws2811 "github.com/rpi-ws281x/rpi-ws281x-go"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -19,12 +19,8 @@ var (
 	brightness   int
 	ledCounts    int
 	gpioPin      int
+	debug        bool
 	lightOptions ws2811.Option
-
-	cycleSpeed int
-	maxTime    int64
-
-	pongBallSize int
 
 	rootCmd = &cobra.Command{
 
@@ -36,6 +32,19 @@ var (
 			// err := server.Run(lights)
 
 			return nil
+		},
+	}
+
+	colorCmd = &cobra.Command{
+		Use:   "color [color]",
+		Short: "testing color",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			SetLogging(debug)
+			pkg.NewColorFromRGB(93, 138, 168)
+			pkg.NewColorFromUInt32(6130344)
+			_, err := pkg.NewColorFromHex("0X5d8aa8")
+			return err
 		},
 	}
 
@@ -76,42 +85,6 @@ var (
 		},
 	}
 
-	cycleCmd = &cobra.Command{
-		Use:   "cycle [cycle type]",
-		Short: "cycle through different colors",
-		Args:  cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("cycle barlights \n")
-			return pkg.Cycle(lightOptions, cycleSpeed, args)
-		},
-	}
-
-	sirenCmd = &cobra.Command{
-		Use:   "siren [siren type]",
-		Short: "Change lights to a solid color.",
-		Args:  cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("sirens barlights \n")
-			return pkg.Siren(lightOptions, cycleSpeed, maxTime, args)
-		},
-	}
-
-	pongCmd = &cobra.Command{
-		Use:   "pong [siren type]",
-		Short: "start pong",
-		Args:  cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("pong barlights \n")
-			return pkg.Pong(lightOptions, maxTime,
-				&types.Ball{
-					Size:  pongBallSize,
-					Color: pkg.DefaultSolidColors["white"],
-					Speed: cycleSpeed,
-				},
-				pkg.CycleColors["default"])
-		},
-	}
-
 	offCmd = &cobra.Command{
 		Use:   "off",
 		Short: "Turn the lights off.",
@@ -124,7 +97,10 @@ var (
 
 func init() {
 
+	cobra.OnInitialize()
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d",
+		false, "debug mode")
 	rootCmd.PersistentFlags().IntVarP(&brightness, "brightness", "b",
 		60, "LED brightness")
 	rootCmd.PersistentFlags().IntVarP(&ledCounts, "ledcount", "l",
@@ -136,6 +112,8 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().IntVarP(&port, "port", "p", 8080, "desired port number")
 
+	rootCmd.AddCommand(colorCmd)
+
 	// off
 	rootCmd.AddCommand(offCmd)
 
@@ -145,24 +123,12 @@ func init() {
 	// set solid
 	setCmd.AddCommand(solidCmd)
 
-	// set cycle
-	setCmd.AddCommand(cycleCmd)
-	cycleCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
-		50, "milliseconds per a led")
-
-	// set pong
-	setCmd.AddCommand(pongCmd)
-	pongCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
-		50, "milliseconds per a led")
-	pongCmd.Flags().IntVarP(&pongBallSize, "ball", "p",
-		3, "number of leds for ball")
-
-	// set siren
-	rootCmd.AddCommand(sirenCmd)
-	sirenCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
-		1000, "milliseconds per a led")
-	sirenCmd.Flags().Int64VarP(&maxTime, "max-time", "m",
-		50, "the number of milliseconds the sirens will play")
+	if debug {
+		fmt.Println("here")
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 
 	// set led options
 	lightOptions = ws2811.DefaultOptions
@@ -170,6 +136,15 @@ func init() {
 	lightOptions.Channels[0].LedCount = ledCounts
 	lightOptions.Channels[0].GpioPin = gpioPin
 
+}
+
+// SetLogging set logging level
+func SetLogging(debug bool) {
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 }
 
 func Execute() {
