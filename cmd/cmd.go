@@ -20,6 +20,9 @@ var (
 	gpioPin      int
 	lightOptions ws2811.Option
 
+	cycleSpeed int
+	maxTime    int64
+
 	rootCmd = &cobra.Command{
 
 		Use:   "barlights",
@@ -70,6 +73,26 @@ var (
 		},
 	}
 
+	cycleCmd = &cobra.Command{
+		Use:   "cycle [cycle type]",
+		Short: "cycle through different colors",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("cycle barlights \n")
+			return pkg.Cycle(lightOptions, cycleSpeed, args)
+		},
+	}
+
+	sirenCmd = &cobra.Command{
+		Use:   "siren [siren type]",
+		Short: "Change lights to a solid color.",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("sirens barlights \n")
+			return pkg.Siren(lightOptions, cycleSpeed, maxTime, args)
+		},
+	}
+
 	offCmd = &cobra.Command{
 		Use:   "off",
 		Short: "Turn the lights off.",
@@ -102,6 +125,17 @@ func init() {
 
 	// set solid
 	setCmd.AddCommand(solidCmd)
+
+	// cycle
+	rootCmd.AddCommand(cycleCmd)
+	cycleCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
+		50, "milliseconds per a led")
+
+	rootCmd.AddCommand(sirenCmd)
+	sirenCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
+		1000, "milliseconds per a led")
+	sirenCmd.Flags().Int64VarP(&maxTime, "max-time", "m",
+		50, "the number of milliseconds the sirens will play")
 
 	// set led options
 	lightOptions = ws2811.DefaultOptions
