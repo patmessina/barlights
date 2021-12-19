@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"barlights/pkg"
+	"barlights/types"
 	"fmt"
 	"os"
 
@@ -22,6 +23,8 @@ var (
 
 	cycleSpeed int
 	maxTime    int64
+
+	pongBallSize int
 
 	rootCmd = &cobra.Command{
 
@@ -93,6 +96,22 @@ var (
 		},
 	}
 
+	pongCmd = &cobra.Command{
+		Use:   "pong [siren type]",
+		Short: "start pong",
+		Args:  cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("pong barlights \n")
+			return pkg.Pong(lightOptions, maxTime,
+				&types.Ball{
+					Size:  pongBallSize,
+					Color: pkg.DefaultSolidColors["white"],
+					Speed: cycleSpeed,
+				},
+				pkg.CycleColors["default"])
+		},
+	}
+
 	offCmd = &cobra.Command{
 		Use:   "off",
 		Short: "Turn the lights off.",
@@ -110,7 +129,7 @@ func init() {
 		60, "LED brightness")
 	rootCmd.PersistentFlags().IntVarP(&ledCounts, "ledcount", "l",
 		145, "number of LEDs")
-	rootCmd.PersistentFlags().IntVarP(&gpioPin, "gpio-pin", "p",
+	rootCmd.PersistentFlags().IntVarP(&gpioPin, "gpio-pin", "g",
 		18, "pin on the raspberry pi where the signal will be available")
 
 	// server
@@ -126,11 +145,19 @@ func init() {
 	// set solid
 	setCmd.AddCommand(solidCmd)
 
-	// cycle
-	rootCmd.AddCommand(cycleCmd)
+	// set cycle
+	setCmd.AddCommand(cycleCmd)
 	cycleCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
 		50, "milliseconds per a led")
 
+	// set pong
+	setCmd.AddCommand(pongCmd)
+	pongCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
+		50, "milliseconds per a led")
+	pongCmd.Flags().IntVarP(&pongBallSize, "ball", "p",
+		3, "number of leds for ball")
+
+	// set siren
 	rootCmd.AddCommand(sirenCmd)
 	sirenCmd.Flags().IntVarP(&cycleSpeed, "speed", "s",
 		1000, "milliseconds per a led")

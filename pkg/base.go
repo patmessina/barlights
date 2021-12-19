@@ -1,15 +1,58 @@
 package pkg
 
 import (
+	"barlights/types"
 	"barlights/utils"
 	"fmt"
+	"math/rand"
 	"time"
 
 	ws2811 "github.com/rpi-ws281x/rpi-ws281x-go"
 )
 
-// Siren
-func Siren(opt ws2811.Option, speed int, maxTime int64, selection []string) error {
+// Pong ball goes back and forth
+func Pong(opt ws2811.Option,
+	maxTime int64,
+	ball *types.Ball, stripColors []uint32) error {
+
+	rand.Seed(time.Now().UnixNano())
+	lights, err := ws2811.MakeWS2811(&opt)
+
+	lights.Init()
+	defer lights.Fini()
+	if err != nil {
+		return err
+	}
+
+	setLights(lights, utils.RandColor(stripColors))
+
+	// Should probably stop sometime
+	start := time.Now().Unix()
+	for time.Now().Unix()-start < maxTime {
+
+		// bounce back and forth
+		color := utils.RandColor(stripColors)
+		err = moveBallDown(lights, color, ball, ball.Size, true)
+		if err != nil {
+			return err
+		}
+
+		color = utils.RandColor(stripColors)
+		err = moveBallDown(lights, color, ball, ball.Size, false)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+// Siren -- flash through a range of colors, when the selection is made up of
+// only two values it behaves like siren
+func Siren(opt ws2811.Option,
+	speed int, maxTime int64,
+	selection []string) error {
 
 	var cycle string
 	if len(selection) > 0 {
@@ -19,31 +62,24 @@ func Siren(opt ws2811.Option, speed int, maxTime int64, selection []string) erro
 	}
 	fmt.Println(cycle)
 
-	dev, err := ws2811.MakeWS2811(&opt)
+	lights, err := ws2811.MakeWS2811(&opt)
 
-	dev.Init()
-	if err != nil {
-		return err
-	}
-
-	defer dev.Fini()
+	lights.Init()
+	defer lights.Fini()
 	if err != nil {
 		return err
 	}
 
 	start := time.Now().Unix()
-	for start-time.Now().Unix() < maxTime {
+	for time.Now().Unix()-start < maxTime {
 
 		for _, color := range CycleColors[cycle] {
 
-			for i := 0; i < opt.Channels[0].LedCount; i++ {
-				dev.Leds(0)[i] = color
-			}
-
-			err = dev.Render()
+			err = setLights(lights, color)
 			if err != nil {
 				return err
 			}
+
 			time.Sleep(time.Duration(speed) * time.Millisecond)
 
 		}
@@ -53,6 +89,8 @@ func Siren(opt ws2811.Option, speed int, maxTime int64, selection []string) erro
 	return nil
 }
 
+// Cycle -- will cycle through a range of colors by invidually changing each
+// led
 func Cycle(opt ws2811.Option, speed int, selection []string) error {
 
 	var cycle string
@@ -62,35 +100,26 @@ func Cycle(opt ws2811.Option, speed int, selection []string) error {
 		cycle = "default"
 	}
 
-	dev, err := ws2811.MakeWS2811(&opt)
+	lights, err := ws2811.MakeWS2811(&opt)
 
-	dev.Init()
-	if err != nil {
-		return err
-	}
-
-	defer dev.Fini()
+	lights.Init()
+	defer lights.Fini()
 	if err != nil {
 		return err
 	}
 
 	// TODO: Check if the cycle exists before running
+	setLights(lights, DefaultSolidColors["blue"])
 	for _, color := range CycleColors[cycle] {
-		for i := 0; i < opt.Channels[0].LedCount; i++ {
-			dev.Leds(0)[i] = color
-			err = dev.Render()
-			if err != nil {
-				return err
-			}
-			time.Sleep(time.Duration(speed) * time.Millisecond)
-
-		}
+		// for i := 0; i < opt.Channels[0].LedCount; i++ {
+		cycleSet(lights, color, speed)
+		// }
 	}
 
 	return nil
 }
 
-// Solid Color
+// Solid Color -- set all leds to the same value
 func Solid(opt ws2811.Option, color string) error {
 
 	var c uint32
@@ -106,23 +135,19 @@ func Solid(opt ws2811.Option, color string) error {
 
 	}
 
-	dev, err := ws2811.MakeWS2811(&opt)
+	lights, err := ws2811.MakeWS2811(&opt)
 
-	dev.Init()
-	if err != nil {
-		return err
-	}
-
-	defer dev.Fini()
+	lights.Init()
+	defer lights.Fini()
 	if err != nil {
 		return err
 	}
 
 	for i := 0; i < opt.Channels[0].LedCount; i++ {
-		dev.Leds(0)[i] = c
+		lights.Leds(0)[i] = c
 	}
 
-	err = dev.Render()
+	err = lights.Render()
 	if err != nil {
 		return err
 	}
@@ -130,29 +155,16 @@ func Solid(opt ws2811.Option, color string) error {
 	return nil
 }
 
-// Off
+// Off -- turn off all the leds
 func Off(opt ws2811.Option) error {
-	dev, err := ws2811.MakeWS2811(&opt)
+	lights, err := ws2811.MakeWS2811(&opt)
 
-	dev.Init()
+	lights.Init()
+	defer lights.Fini()
 	if err != nil {
 		return err
 	}
 
-	defer dev.Fini()
-	if err != nil {
-		return err
-	}
-
-	for i := 0; i < opt.Channels[0].LedCount; i++ {
-		dev.Leds(0)[i] = DefaultSolidColors["off"]
-	}
-
-	err = dev.Render()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return setLights(lights, DefaultSolidColors["off"])
 
 }
