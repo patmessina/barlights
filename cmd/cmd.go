@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"barlights/pkg"
 	"fmt"
 	"os"
 
+	ws2811 "github.com/rpi-ws281x/rpi-ws281x-go"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +14,11 @@ const (
 )
 
 var (
-	port int
+	port         int
+	brightness   int
+	ledCounts    int
+	gpioPin      int
+	lightOptions ws2811.Option
 
 	rootCmd = &cobra.Command{
 
@@ -51,10 +57,16 @@ var (
 		Use:   "set",
 		Short: "Start the lights.",
 		Long:  `Turn the lights on.`,
+	}
+
+	solidCmd = &cobra.Command{
+		Use:   "solid [color]",
+		Short: "Change lights to a solid color.",
+		Args:  cobra.ExactArgs(1),
+		Long:  `Turn the lights on.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("setting barlights\n")
-			// TODO: start server
-			return nil
+			fmt.Printf("setting barlights to %v\n", args[0])
+			return pkg.Solid(lightOptions, args[0])
 		},
 	}
 
@@ -63,8 +75,7 @@ var (
 		Short: "Turn the lights off.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Turning lights off.\n")
-			// TODO: Turn off the lights
-			return nil
+			return pkg.Off(lightOptions)
 		},
 	}
 )
@@ -72,11 +83,31 @@ var (
 func init() {
 
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.PersistentFlags().IntVarP(&brightness, "brightness", "b",
+		60, "LED brightness")
+	rootCmd.PersistentFlags().IntVarP(&ledCounts, "ledcount", "l",
+		145, "number of LEDs")
+	rootCmd.PersistentFlags().IntVarP(&gpioPin, "gpio-pin", "p",
+		18, "pin on the raspberry pi where the signal will be available")
+
+	// server
 	rootCmd.AddCommand(serverCmd)
-	rootCmd.AddCommand(setCmd)
+	serverCmd.Flags().IntVarP(&port, "port", "p", 8080, "desired port number")
+
+	// off
 	rootCmd.AddCommand(offCmd)
 
-	serverCmd.Flags().IntVarP(&port, "port", "p", 8080, "desired port number")
+	// set
+	rootCmd.AddCommand(setCmd)
+
+	// set solid
+	setCmd.AddCommand(solidCmd)
+
+	// set led options
+	lightOptions = ws2811.DefaultOptions
+	lightOptions.Channels[0].Brightness = brightness
+	lightOptions.Channels[0].LedCount = ledCounts
+	lightOptions.Channels[0].GpioPin = gpioPin
 
 }
 
