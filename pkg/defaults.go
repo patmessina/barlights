@@ -1,6 +1,8 @@
 package pkg
 
 var (
+	OFF = uint32(0x000000)
+
 	CycleColors = map[string][]uint32{
 		// comes from the following pallet
 		// https://lospec.com/palette-list/mr-colors
@@ -29,15 +31,19 @@ var (
 		},
 	}
 
-	DefaultSolidColors = map[string]uint32{
-		"off":    uint32(0x000000),
-		"blue":   uint32(0x21abcD),
-		"yellow": uint32(0xffe135),
-		"green":  uint32(0x7fff00),
-		"red":    uint32(0xc41e3a),
-		"white":  uint32(0xf0f8ff),
-		"purple": uint32(0x8b008b),
-		"pink":   uint32(0xde3163),
-		"orange": uint32(0xff4f00),
+	DefaultColors = map[string]uint32{
+		"red":        uint32(0xff0000),
+		"orange":     uint32(0xff8000),
+		"yellow":     uint32(0xffff00),
+		"lime":       uint32(0x80ff00),
+		"green":      uint32(0x00ff00),
+		"greenblue":  uint32(0x00ff80),
+		"lightblue":  uint32(0x00ffff),
+		"blue":       uint32(0x0080ff),
+		"darkblue":   uint32(0x0000ff),
+		"purple":     uint32(0x7f00ff),
+		"purplepink": uint32(0xff00ff),
+		"pink":       uint32(0xff007f),
+		"white":      uint32(0xffffff),
 	}
 )

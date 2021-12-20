@@ -236,3 +236,5 @@ RUN go get github.com/rpi-ws281x/rpi-ws281x-go
 # Modifications follow
 # Cuts down build times
 RUN go get github.com/spf13/cobra
+RUN go get github.com/sirupsen/logrus
+RUN go get golang.org/x/sys

@@ -8,9 +8,9 @@ import (
 )
 
 // SetLights -- Set lights to a specified color
-func setLights(lights *ws2811.WS2811, color uint32) error {
+func setLights(lights *ws2811.WS2811, color *types.Color) error {
 	for i := 0; i < len(lights.Leds(0)); i++ {
-		lights.Leds(0)[i] = color
+		lights.Leds(0)[i] = color.UInt32
 	}
 	err := lights.Render()
 	if err != nil {

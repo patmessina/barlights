@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"barlights/pkg"
+	"barlights/types"
+	"barlights/utils"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
-	ws2811 "github.com/rpi-ws281x/rpi-ws281x-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -15,12 +18,11 @@ const (
 )
 
 var (
-	port         int
-	brightness   int
-	ledCounts    int
-	gpioPin      int
-	debug        bool
-	lightOptions ws2811.Option
+	port       int
+	brightness int
+	ledCounts  int
+	gpioPin    int
+	debug      bool
 
 	rootCmd = &cobra.Command{
 
@@ -32,19 +34,6 @@ var (
 			// err := server.Run(lights)
 
 			return nil
-		},
-	}
-
-	colorCmd = &cobra.Command{
-		Use:   "color [color]",
-		Short: "testing color",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			SetLogging(debug)
-			pkg.NewColorFromRGB(93, 138, 168)
-			pkg.NewColorFromUInt32(6130344)
-			_, err := pkg.NewColorFromHex("0X5d8aa8")
-			return err
 		},
 	}
 
@@ -81,7 +70,29 @@ var (
 		Long:  `Turn the lights on.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("setting barlights to %v\n", args[0])
-			return pkg.Solid(lightOptions, args[0])
+
+			var c *types.Color
+			var err error
+
+			if v, ok := pkg.DefaultColors[strings.ToLower(args[0])]; ok {
+				c, err = pkg.NewColorFromUInt32(v)
+				if err != nil {
+					return err
+				}
+			} else if strings.HasPrefix(args[0], "#") ||
+				strings.HasPrefix(args[0], "0x") ||
+				strings.HasPrefix(args[0], "0X") {
+				c, err = pkg.NewColorFromHex(args[0])
+				if err != nil {
+					return err
+				}
+
+			} else {
+				return errors.New("please choose a default color or use a hex value")
+			}
+
+			lightOptions := utils.SetLightOptions(brightness, ledCounts, gpioPin)
+			return pkg.Solid(lightOptions, c)
 		},
 	}
 
@@ -89,7 +100,8 @@ var (
 		Use:   "off",
 		Short: "Turn the lights off.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("Turning lights off.\n")
+			log.Infoln("Turning lights off.")
+			lightOptions := utils.SetLightOptions(brightness, ledCounts, gpioPin)
 			return pkg.Off(lightOptions)
 		},
 	}
@@ -112,13 +124,12 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().IntVarP(&port, "port", "p", 8080, "desired port number")
 
-	rootCmd.AddCommand(colorCmd)
-
-	// off
-	rootCmd.AddCommand(offCmd)
-
 	// set
 	rootCmd.AddCommand(setCmd)
+
+	// set off
+	rootCmd.AddCommand(offCmd)
+	setCmd.AddCommand(offCmd)
 
 	// set solid
 	setCmd.AddCommand(solidCmd)
@@ -129,12 +140,6 @@ func init() {
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}
-
-	// set led options
-	lightOptions = ws2811.DefaultOptions
-	lightOptions.Channels[0].Brightness = brightness
-	lightOptions.Channels[0].LedCount = ledCounts
-	lightOptions.Channels[0].GpioPin = gpioPin
 
 }
 

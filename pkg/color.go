@@ -123,3 +123,20 @@ func RandColor(colors []*types.Color) *types.Color {
 	i := rand.Intn(len(colors))
 	return colors[i]
 }
+
+// ColorFromHexSlice given a slice of hex numbers return a slice of *types.Colors
+func ColorFromHexSlice(hexs []string) ([]*types.Color, error) {
+
+	colors := []*types.Color{}
+	for _, h := range hexs {
+		c, err := NewColorFromHex(h)
+		if err != nil {
+			return nil, err
+		}
+		colors = append(colors, c)
+	}
+
+	return colors, nil
+}
+
+// TODO: ColorFromRGBSlice
