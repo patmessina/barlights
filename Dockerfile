@@ -238,3 +238,11 @@ RUN go get github.com/rpi-ws281x/rpi-ws281x-go
 RUN go get github.com/spf13/cobra
 RUN go get github.com/sirupsen/logrus
 RUN go get golang.org/x/sys
+
+RUN go get github.com/gin-gonic/gin
+RUN go get github.com/mattn/go-isatty
+RUN go get github.com/golang/protobuf 
+RUN go get gopkg.in/yaml.v2 
+RUN go get golang.org/x/crypto 
+RUN go get google.golang.org/protobuf 
+RUN go get golang.org/x/crypto

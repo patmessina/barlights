@@ -4,6 +4,7 @@ import (
 	"barlights/types"
 
 	ws2811 "github.com/rpi-ws281x/rpi-ws281x-go"
+	log "github.com/sirupsen/logrus"
 )
 
 // Solid Color -- set all leds to the same value
@@ -18,6 +19,13 @@ func Solid(opt *ws2811.Option, color *types.Color) error {
 		return err
 	}
 
+	log.WithFields(
+		log.Fields{
+			"function":   "Solid",
+			"color":      color.Hex,
+			"brightness": opt.Channels[0].Brightness,
+		},
+	).Debug("setting lights")
 	err = setLights(lights, color)
 	if err != nil {
 		return err
@@ -41,6 +49,13 @@ func Off(opt *ws2811.Option) error {
 		return err
 	}
 
+	log.WithFields(
+		log.Fields{
+			"function":   "Solid",
+			"color":      c.Hex,
+			"brightness": opt.Channels[0].Brightness,
+		},
+	).Debug("setting lights off")
 	return setLights(lights, c)
 
 }

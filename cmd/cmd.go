@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"barlights/pkg"
+	"barlights/server"
 	"barlights/types"
 	"barlights/utils"
 	"errors"
@@ -51,8 +52,16 @@ var (
 		Short: "Start barlight server",
 		Long:  `Starts server that hosts a API with the light strip.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("starting Barlights server on port %v\n", port)
-			// TODO: start server
+			SetLogging(debug)
+
+			log.WithFields(
+				log.Fields{
+					"args": args,
+					"port": port,
+				}).Info("starting barlights server")
+
+			lightOptions := utils.SetLightOptions(brightness, ledCounts, gpioPin)
+			server.Start(lightOptions, port)
 			return nil
 		},
 	}
@@ -69,8 +78,12 @@ var (
 		Args:  cobra.ExactArgs(1),
 		Long:  `Turn the lights on.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("setting barlights to %v\n", args[0])
+			SetLogging(debug)
 
+			log.WithFields(
+				log.Fields{
+					"args": args,
+				}).Info("setting barlights to solid color")
 			var c *types.Color
 			var err error
 
@@ -101,7 +114,7 @@ var (
 		Short: "Turn the lights off.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.Infoln("Turning lights off.")
-			lightOptions := utils.SetLightOptions(brightness, ledCounts, gpioPin)
+			lightOptions := utils.SetLightOptions(0, ledCounts, gpioPin)
 			return pkg.Off(lightOptions)
 		},
 	}
@@ -133,13 +146,6 @@ func init() {
 
 	// set solid
 	setCmd.AddCommand(solidCmd)
-
-	if debug {
-		fmt.Println("here")
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
-	}
 
 }
 
