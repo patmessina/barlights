@@ -1,0 +1,11 @@
+[Unit]
+Description=Lights for the bar.
+
+[Service]
+ExecStart=/usr/sbin/lxdm
+Restart=always
+IgnoreSIGPIPE=no
+
+[Install]
+Alias=barlights.service
+
